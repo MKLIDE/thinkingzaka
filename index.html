@@ -1,349 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  
-  <!-- Primary Meta Tags -->
-  <title>ThinkingZaka – War/Peace Macro Strategy Dashboard</title>
-  <meta name="title" content="ThinkingZaka – War/Peace Macro Strategy Dashboard">
-  <meta name="description" content="Real-time War vs Peace portfolio strategy with entry zones, RSI confirmation, and macro regime detection for BTC, SOL, PLTR, QQQ, Gold, and South African stocks.">
-  <meta name="keywords" content="trading dashboard, war portfolio, peace portfolio, macro strategy, bitcoin, solana, palantir, qqq, gold, capitec, standard bank">
-  <meta name="author" content="ThinkingZaka">
-  <meta name="theme-color" content="#ffd700">
-
-  <!-- PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="ThinkingZaka">
-  <meta name="format-detection" content="telephone=no">
-  <meta name="mobile-web-app-capable" content="yes">
-
-  <!-- Open Graph / Social Media -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://thinkingzaka.com/">
-  <meta property="og:title" content="ThinkingZaka – War/Peace Macro Strategy">
-  <meta property="og:description" content="Live dashboard for dual-regime trading strategy">
-  <meta property="og:image" content="/icons/og-image.png">
-
-  <!-- Icons & Assets -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-  <link rel="manifest" href="manifest.json">
-  
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css">
-  
-  <!-- Preload critical assets -->
-  <link rel="preload" href="style.css" as="style">
-  <link rel="preload" href="app.js" as="script">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    
+    <!-- Primary Meta Tags -->
+    <title>ThinkingZaka – Macro Strategy Dashboard</title>
+    <meta name="description" content="Live War vs Peace portfolio strategy with entry zones and macro regime detection">
+    <meta name="theme-color" content="#ffd700">
+    
+    <!-- PWA Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ThinkingZaka">
+    
+    <!-- Icons (Base64 minimal icons to avoid missing files) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI8SURBVFiF7ZdPKw");
+    <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI8SURBVFiF7ZdPKw">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
 </head>
-
 <body>
-  <!-- App Header with Status -->
-  <header class="app-header" role="banner">
-    <div class="header-content">
-      <div class="brand">
-        <h1 class="logo">
-          <span class="war-emoji">⚔️</span>
-          ThinkingZaka
-          <span class="peace-emoji">🕊️</span>
-        </h1>
-        <p class="tagline">War vs Peace · Macro Strategy · March 2026</p>
-      </div>
-      
-      <div class="status-panel" id="statusPanel">
-        <div class="connection-status" id="connectionStatus">
-          <span class="status-dot live"></span>
-          <span>LIVE</span>
+    <!-- App Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="brand">
+                <h1>THINKINGZAKA</h1>
+                <p class="subtitle">Macro Strategy · March 2026</p>
+            </div>
+            
+            <div class="status-bar">
+                <div class="connection-status" id="connectionStatus">
+                    <span class="dot"></span>
+                    <span class="status-text">LIVE</span>
+                </div>
+                <div class="api-counter" id="apiUsage">API: 0/25</div>
+                <button class="refresh-button" id="refreshBtn">Refresh</button>
+            </div>
         </div>
-        <div class="api-usage" id="apiUsage">Alpha Vantage: 0/25</div>
-        <button class="refresh-btn" id="manualRefresh" aria-label="Refresh data">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" stroke="currentColor"/>
-          </svg>
-          Refresh
-        </button>
-      </div>
+    </header>
+
+    <main class="main">
+        <!-- Macro Regime Section -->
+        <section class="regime-section">
+            <div class="section-header">
+                <h2>Macro Regime</h2>
+                <span class="update-time" id="lastUpdate">Updating...</span>
+            </div>
+            <div class="regime-card" id="macroStatus">
+                <div class="regime-value">Analyzing markets...</div>
+                <div class="regime-allocation" id="allocationStatus">40% War · 40% Peace · 20% Cash</div>
+            </div>
+        </section>
+
+        <!-- War Portfolio -->
+        <section class="portfolio-section">
+            <div class="section-header">
+                <h2 class="war-title">War Portfolio</h2>
+                <p class="section-note">Defense & Safe Haven</p>
+            </div>
+            <div class="card-grid" id="warPortfolio">
+                <!-- Cards will be populated by JavaScript -->
+                <div class="card loading" id="btc-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="pltr-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="gold-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Peace Portfolio - US -->
+        <section class="portfolio-section">
+            <div class="section-header">
+                <h2 class="peace-title">Peace Portfolio</h2>
+                <p class="section-note">Growth & Technology</p>
+            </div>
+            <div class="card-grid" id="peacePortfolioUS">
+                <div class="card loading" id="qqq-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="sol-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- South African Portfolio -->
+        <section class="portfolio-section">
+            <div class="section-header">
+                <h2>South African Holdings</h2>
+                <p class="section-note">JSE Listed</p>
+            </div>
+            <div class="card-grid" id="saPortfolio">
+                <div class="card loading" id="capitec-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="standardbank-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="firstrand-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="card loading" id="shoprite-loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alerts Section -->
+        <section class="alerts-section">
+            <div class="section-header">
+                <h2>Strategy Alerts</h2>
+                <button class="clear-button" id="clearAlerts">Clear</button>
+            </div>
+            <div class="alerts-container">
+                <ul class="alert-list" id="alertList">
+                    <li class="alert-placeholder">System ready. Waiting for signals...</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="actions-section">
+            <div class="actions-grid">
+                <button class="action-button" id="recordEntryBtn">Record Entry</button>
+                <button class="action-button" id="recordExitBtn">Record Exit</button>
+                <button class="action-button" id="exportDataBtn">Export Data</button>
+                <button class="action-button" id="viewStrategyBtn">View Strategy</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p class="copyright">© 2026 ThinkingZaka</p>
+            <p class="disclaimer">For educational purposes only</p>
+            <a href="#" class="install-link" id="installPWA" style="display: none;">Install App</a>
+        </div>
+    </footer>
+
+    <!-- Strategy Modal -->
+    <div class="modal" id="strategyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Strategy Framework</h2>
+                <button class="modal-close" id="closeStrategyModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>War Portfolio</h3>
+                <ul>
+                    <li><strong>BTC:</strong> $63,000 - $65,000 entry → $73,000 target</li>
+                    <li><strong>PLTR:</strong> $142 - $148 entry → $186 target</li>
+                    <li><strong>Gold:</strong> $4,805 - $5,000 entry → $6,000 target</li>
+                </ul>
+                
+                <h3>Peace Portfolio</h3>
+                <ul>
+                    <li><strong>QQQ:</strong> $595 - $603 entry → $616 target</li>
+                    <li><strong>SOL:</strong> $78 - $81 entry → $101 target</li>
+                    <li><strong>Capitec:</strong> R4,155 - R4,170 entry → R4,779 target</li>
+                    <li><strong>Standard Bank:</strong> R290 - R303 entry → R350 target</li>
+                    <li><strong>FirstRand:</strong> R86 - R87 entry → R102 target</li>
+                    <li><strong>Shoprite:</strong> R260 - R261 entry → R285 target</li>
+                </ul>
+                
+                <h3>Entry Rules</h3>
+                <p>Buy pullbacks in zones, not breakouts. RSI below 65 confirms entry.</p>
+                
+                <h3>Allocation</h3>
+                <p>War: 40% · Peace: 40% · Cash: 20%</p>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <main class="container" role="main">
-    <!-- Macro Regime Section -->
-    <section class="macro-section" aria-labelledby="macro-heading">
-      <div class="section-header">
-        <h2 id="macro-heading">📊 Macro Regime Detection</h2>
-        <div class="last-update" id="lastFullUpdate">Never</div>
-      </div>
-      
-      <div class="macro-panel" id="macroPanel">
-        <div class="regime-display" id="macroStatus" role="status" aria-live="polite">
-          ⚖️ Analyzing markets...
-        </div>
-        
-        <div class="allocation-tracker" id="allocationStatus">
-          War: 0% · Peace: 0% · Cash: 20% (target)
-        </div>
-        
-        <div class="regime-indicators" id="regimeIndicators">
-          <div class="indicator war-indicator">
-            <span class="label">War Signals:</span>
-            <span class="value" id="warScore">0</span>
-          </div>
-          <div class="indicator peace-indicator">
-            <span class="label">Peace Signals:</span>
-            <span class="value" id="peaceScore">0</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Market Radar - War Portfolio -->
-    <section class="market-section" aria-labelledby="war-heading">
-      <div class="section-header">
-        <h2 id="war-heading" class="war-title">⚔️ War Portfolio · Defense & Safe Haven</h2>
-        <p class="section-subtitle">Geopolitical tension, inflation hedge, defense spending</p>
-      </div>
-      
-      <div class="card-grid" id="war-portfolio">
-        <!-- Cards will be populated by JavaScript -->
-        <div class="card placeholder" id="btc-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="pltr-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="gold-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Market Radar - Peace Portfolio -->
-    <section class="market-section" aria-labelledby="peace-heading">
-      <div class="section-header">
-        <h2 id="peace-heading" class="peace-title">🕊️ Peace Portfolio · Growth & Risk-On</h2>
-        <p class="section-subtitle">Economic expansion, tech growth, consumer recovery</p>
-      </div>
-      
-      <div class="card-grid" id="peace-portfolio-us">
-        <div class="card placeholder" id="qqq-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="sol-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-      </div>
-      
-      <h3 class="subheading">South African Growth</h3>
-      <div class="card-grid" id="peace-portfolio-sa">
-        <div class="card placeholder" id="capitec-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="standardbank-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="firstrand-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-        <div class="card placeholder" id="shoprite-placeholder">
-          <div class="loading-spinner"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Strategy Alerts -->
-    <section class="alerts-section" aria-labelledby="alerts-heading">
-      <div class="section-header">
-        <h2 id="alerts-heading">🚨 Strategy Signals & Alerts</h2>
-        <button class="clear-alerts-btn" id="clearAlerts" aria-label="Clear all alerts">Clear all</button>
-      </div>
-      
-      <div class="alerts-container">
-        <ul class="alert-list" id="alertList" role="log" aria-live="polite">
-          <li class="alert-placeholder">Waiting for signals...</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Quick Actions Panel -->
-    <section class="actions-section" aria-labelledby="actions-heading">
-      <h2 id="actions-heading" class="visually-hidden">Quick Actions</h2>
-      <div class="actions-grid">
-        <button class="action-btn" id="recordEntryBtn" onclick="promptEntry()">
-          📝 Record Entry
-        </button>
-        <button class="action-btn" id="recordExitBtn" onclick="promptExit()">
-          💰 Record Exit
-        </button>
-        <button class="action-btn" id="exportDataBtn" onclick="exportData()">
-          📊 Export Data
-        </button>
-        <button class="action-btn" id="resetAlertsBtn" onclick="resetAlerts()">
-          🔄 Reset Alerts
-        </button>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="app-footer" role="contentinfo">
-    <div class="footer-content">
-      <div class="footer-info">
-        <p>© 2026 ThinkingZaka · War/Peace Macro Strategy</p>
-        <p class="disclaimer">For educational purposes. Always DYOR before trading.</p>
-      </div>
-      <div class="footer-links">
-        <a href="#" id="installPWA" class="install-link" style="display: none;">📱 Install App</a>
-        <a href="https://github.com/yourusername/thinkingzaka" target="_blank" rel="noopener">GitHub</a>
-        <a href="#" onclick="showStrategy()">Strategy</a>
-        <a href="#" onclick="showSettings()">Settings</a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Strategy Modal (hidden by default) -->
-  <div class="modal" id="strategyModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal()" aria-label="Close">×</button>
-      <h2 id="modalTitle">Strategic Portfolio Framework</h2>
-      <div class="modal-body">
-        <h3>War Portfolio</h3>
-        <ul>
-          <li><strong>BTC:</strong> $63k-65k entry, target $73k</li>
-          <li><strong>PLTR:</strong> $142-148 entry, target $186</li>
-          <li><strong>Gold:</strong> $4805-5000 entry, target $6000</li>
-        </ul>
-        <h3>Peace Portfolio</h3>
-        <ul>
-          <li><strong>QQQ:</strong> $595-603 entry, target $616</li>
-          <li><strong>SOL:</strong> $78-81 entry, target $101</li>
-          <li><strong>Capitec:</strong> R4155-4170 entry, target R4779</li>
-          <li><strong>Standard Bank:</strong> R290-303 entry, target R350</li>
-          <li><strong>FirstRand:</strong> R86-87 entry, target R102</li>
-          <li><strong>Shoprite:</strong> R260-261 entry, target R285</li>
-        </ul>
-        <p><strong>Rule:</strong> Buy pullbacks in zones, not breakouts. RSI confirmation.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Modal -->
-  <div class="modal" id="settingsModal" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeSettings()">×</button>
-      <h2>Settings</h2>
-      <div class="modal-body">
-        <label>
-          <input type="checkbox" id="notificationToggle" checked> Enable Notifications
-        </label>
-        <label>
-          <input type="checkbox" id="soundToggle"> Enable Sound Alerts
-        </label>
-        <label>
-          Update Interval:
-          <select id="updateInterval">
-            <option value="300000">5 minutes</option>
-            <option value="600000" selected>10 minutes</option>
-            <option value="900000">15 minutes</option>
-          </select>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="app.js"></script>
-  <script>
-    // Install PWA prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById('installPWA').style.display = 'inline';
-    });
-
-    document.getElementById('installPWA').addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
-      deferredPrompt = null;
-      document.getElementById('installPWA').style.display = 'none';
-    });
-
-    // Modal functions
-    function showStrategy() {
-      document.getElementById('strategyModal').style.display = 'flex';
-    }
-    
-    function showSettings() {
-      document.getElementById('settingsModal').style.display = 'flex';
-    }
-    
-    function closeModal() {
-      document.getElementById('strategyModal').style.display = 'none';
-    }
-    
-    function closeSettings() {
-      document.getElementById('settingsModal').style.display = 'none';
-    }
-    
-    // Entry/Exit prompts
-    function promptEntry() {
-      const asset = prompt('Enter asset symbol (BTC, PLTR, etc):');
-      if (!asset) return;
-      const price = prompt('Enter entry price:');
-      if (!price) return;
-      const quantity = prompt('Enter quantity:');
-      if (!quantity) return;
-      
-      if (window.thinkingzaka?.recordEntry) {
-        window.thinkingzaka.recordEntry(asset.toLowerCase(), parseFloat(quantity), parseFloat(price));
-      }
-    }
-    
-    function promptExit() {
-      const asset = prompt('Enter asset symbol:');
-      if (!asset) return;
-      const price = prompt('Enter exit price:');
-      if (!price) return;
-      const quantity = prompt('Enter quantity:');
-      if (!quantity) return;
-      
-      if (window.thinkingzaka?.recordExit) {
-        window.thinkingzaka.recordExit(asset.toLowerCase(), parseFloat(quantity), parseFloat(price));
-      }
-    }
-    
-    function exportData() {
-      const data = {
-        prices: window.thinkingzaka?.state?.prices || {},
-        portfolio: window.thinkingzaka?.state?.portfolio || {},
-        timestamp: new Date().toISOString()
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `thinkingzaka-export-${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-    }
-    
-    function resetAlerts() {
-      document.getElementById('alertList').innerHTML = '<li class="alert-placeholder">Waiting for signals...</li>';
-    }
-    
-    // Handle clicks outside modals
-    window.onclick = function(event) {
-      if (event.target.classList.contains('modal')) {
-        event.target.style.display = 'none';
-      }
-    };
-  </script>
+    <!-- Scripts -->
+    <script src="app.js"></script>
 </body>
-  </html>
+</html>
