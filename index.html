@@ -2,11 +2,7 @@
 <html>
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>War & Peace Market Radar</title>
-
-<link rel="manifest" href="manifest.json">
+<title>ThinkingZaka Strategy Terminal</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -14,74 +10,51 @@
 
 <body>
 
-<h1>🌍 War & Peace Market Radar</h1>
+<header>
 
-<div id="mode" class="mode">
-Loading market regime...
+<h1>ThinkingZaka</h1>
+<p>Live Macro Strategy Monitor</p>
+
+<div id="status">
+System Status: LIVE
 </div>
 
-<h2>⚔ WAR ASSETS</h2>
+</header>
 
-<div class="card">
-<h3>Palantir</h3>
-<p id="pltr"></p>
-<p id="pltrSignal"></p>
+<section id="macro">
+
+<h2>Macro Regime</h2>
+
+<div id="macroStatus">
+Analyzing...
 </div>
 
-<div class="card">
-<h3>Bitcoin</h3>
-<p id="btc"></p>
-<p id="btcSignal"></p>
-</div>
+</section>
 
-<div class="card">
-<h3>Gold</h3>
-<p id="gold"></p>
-<p id="goldSignal"></p>
-</div>
 
-<h2>🕊 PEACE ASSETS</h2>
+<section id="market">
 
-<div class="card">
-<h3>NASDAQ QQQ</h3>
-<p id="qqq"></p>
-<p id="qqqSignal"></p>
-</div>
+<h2>Market Radar</h2>
 
-<div class="card">
-<h3>Solana</h3>
-<p id="sol"></p>
-<p id="solSignal"></p>
-</div>
+<div class="card" id="btc"></div>
+<div class="card" id="gold"></div>
+<div class="card" id="qqq"></div>
+<div class="card" id="sol"></div>
+<div class="card" id="pltr"></div>
 
-<div class="card">
-<h3>Capitec</h3>
-<p id="cpi"></p>
-<p id="cpiSignal"></p>
-</div>
+</section>
 
-<div class="card">
-<h3>Standard Bank</h3>
-<p id="sbk"></p>
-<p id="sbkSignal"></p>
-</div>
 
-<div class="card">
-<h3>FirstRand</h3>
-<p id="fsr"></p>
-<p id="fsrSignal"></p>
-</div>
+<section id="alerts">
 
-<div class="card">
-<h3>Shoprite</h3>
-<p id="shp"></p>
-<p id="shpSignal"></p>
-</div>
+<h2>Strategy Alerts</h2>
 
-<h2>📰 Major Market News</h2>
-<ul id="news"></ul>
+<ul id="alertList"></ul>
 
-<script src="app.js"></script>
+</section>
+
+
+<script src="script.js"></script>
 
 </body>
 </html>
