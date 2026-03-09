@@ -1,14 +1,28 @@
-const cacheName = 'thinkingzaka-v1';
-const assetsToCache = ['index.html','style.css','app.js','manifest.json'];
+// sw.js - Add to your existing service worker
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(cacheName).then(cache => cache.addAll(assetsToCache))
-  );
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    
+    event.waitUntil(
+        clients.openWindow('/')
+    );
 });
 
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
+self.addEventListener('sync', (event) => {
+    if (event.tag === 'market-update') {
+        event.waitUntil(
+            clients.matchAll().then(clients => {
+                clients.forEach(client => {
+                    client.postMessage({ type: 'REFRESH' });
+                });
+            })
+        );
+    }
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data.type === 'UPDATE') {
+        // Cache latest data
+        self.lastUpdate = event.data.data;
+    }
 });
