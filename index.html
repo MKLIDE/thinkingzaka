@@ -1,60 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>ThinkingZaka Strategy Terminal</title>
-
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThinkingZaka – Live Macro Strategy</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
-
 <body>
 
 <header>
-
-<h1>ThinkingZaka</h1>
-<p>Live Macro Strategy Monitor</p>
-
-<div id="status">
-System Status: LIVE
-</div>
-
+  <h1>ThinkingZaka</h1>
+  <p>Live Macro Strategy Dashboard</p>
+  <div id="status">System Status: LIVE</div>
 </header>
 
-<section id="macro">
+<main>
+  <section id="macro">
+    <h2>Macro Regime</h2>
+    <div id="macroStatus">Analyzing...</div>
+  </section>
 
-<h2>Macro Regime</h2>
+  <section id="market">
+    <h2>Market Radar</h2>
+    <div class="card" id="btc"></div>
+    <div class="card" id="gold"></div>
+    <div class="card" id="pltr"></div>
+    <div class="card" id="qqq"></div>
+    <div class="card" id="sol"></div>
+  </section>
 
-<div id="macroStatus">
-Analyzing...
-</div>
+  <section id="alerts">
+    <h2>Strategy Alerts</h2>
+    <ul id="alertList"></ul>
+  </section>
+</main>
 
-</section>
-
-
-<section id="market">
-
-<h2>Market Radar</h2>
-
-<div class="card" id="btc"></div>
-<div class="card" id="gold"></div>
-<div class="card" id="qqq"></div>
-<div class="card" id="sol"></div>
-<div class="card" id="pltr"></div>
-
-</section>
-
-
-<section id="alerts">
-
-<h2>Strategy Alerts</h2>
-
-<ul id="alertList"></ul>
-
-</section>
-
-
-<script src="script.js"></script>
-
+<script src="app.js"></script>
+<script src="sw.js"></script>
 </body>
 </html>
