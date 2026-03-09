@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     
     <!-- Primary Meta Tags -->
-    <title>ThinkingZaka – Macro Strategy Dashboard</title>
-    <meta name="description" content="Live War vs Peace portfolio strategy with entry zones and macro regime detection">
+    <title>ThinkingZaka – Smart Portfolio Manager</title>
+    <meta name="description" content="Intelligent portfolio management with real-time risk detection and opportunity alerts">
     <meta name="theme-color" content="#ffd700">
     
     <!-- PWA Tags -->
@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ThinkingZaka">
     
-    <!-- Icons (Base64 minimal icons to avoid missing files) -->
-    <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI8SURBVFiF7ZdPKw");
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI8SURBVFiF7ZdPKw">
     <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAI8SURBVFiF7ZdPKw">
     
     <!-- Styles -->
@@ -30,7 +30,7 @@
         <div class="header-container">
             <div class="brand">
                 <h1>THINKINGZAKA</h1>
-                <p class="subtitle">Macro Strategy · March 2026</p>
+                <p class="subtitle">Smart Portfolio Manager · Real-Time Risk Intelligence</p>
             </div>
             
             <div class="status-bar">
@@ -38,92 +38,52 @@
                     <span class="dot"></span>
                     <span class="status-text">LIVE</span>
                 </div>
-                <div class="api-counter" id="apiUsage">API: 0/25</div>
+                <div class="api-stats" id="apiStats">API: 0/0</div>
                 <button class="refresh-button" id="refreshBtn">Refresh</button>
             </div>
         </div>
     </header>
 
     <main class="main">
-        <!-- Macro Regime Section -->
-        <section class="regime-section">
+        <!-- Portfolio Summary Section -->
+        <section class="summary-section">
             <div class="section-header">
-                <h2>Macro Regime</h2>
+                <h2>Portfolio Overview</h2>
                 <span class="update-time" id="lastUpdate">Updating...</span>
             </div>
-            <div class="regime-card" id="macroStatus">
-                <div class="regime-value">Analyzing markets...</div>
-                <div class="regime-allocation" id="allocationStatus">40% War · 40% Peace · 20% Cash</div>
+            <div class="summary-card" id="portfolioSummary">
+                <div class="portfolio-value">$0.00</div>
+                <div class="portfolio-pnl">0.00% overall</div>
             </div>
         </section>
 
-        <!-- War Portfolio -->
+        <!-- Portfolio Holdings -->
         <section class="portfolio-section">
             <div class="section-header">
-                <h2 class="war-title">War Portfolio</h2>
-                <p class="section-note">Defense & Safe Haven</p>
+                <h2>Your Holdings</h2>
+                <p class="section-note">Real-time prices · Risk metrics · Opportunities</p>
             </div>
-            <div class="card-grid" id="warPortfolio">
+            <div class="card-grid" id="portfolioGrid">
                 <!-- Cards will be populated by JavaScript -->
-                <div class="card loading" id="btc-loading">
+                <div class="card loading" id="loading-placeholder">
                     <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="pltr-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="gold-loading">
-                    <div class="loading-spinner"></div>
+                    <p style="text-align: center; margin-top: 1rem;">Loading portfolio...</p>
                 </div>
             </div>
         </section>
 
-        <!-- Peace Portfolio - US -->
-        <section class="portfolio-section">
-            <div class="section-header">
-                <h2 class="peace-title">Peace Portfolio</h2>
-                <p class="section-note">Growth & Technology</p>
-            </div>
-            <div class="card-grid" id="peacePortfolioUS">
-                <div class="card loading" id="qqq-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="sol-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- South African Portfolio -->
-        <section class="portfolio-section">
-            <div class="section-header">
-                <h2>South African Holdings</h2>
-                <p class="section-note">JSE Listed</p>
-            </div>
-            <div class="card-grid" id="saPortfolio">
-                <div class="card loading" id="capitec-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="standardbank-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="firstrand-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="card loading" id="shoprite-loading">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Alerts Section -->
+        <!-- Intelligence Alerts -->
         <section class="alerts-section">
             <div class="section-header">
-                <h2>Strategy Alerts</h2>
-                <button class="clear-button" id="clearAlerts">Clear</button>
+                <h2>Intelligence Alerts</h2>
+                <div class="alert-controls">
+                    <span class="alert-count" id="alertCount">0</span>
+                    <button class="clear-button" id="clearAlerts">Clear</button>
+                </div>
             </div>
             <div class="alerts-container">
                 <ul class="alert-list" id="alertList">
-                    <li class="alert-placeholder">System ready. Waiting for signals...</li>
+                    <li class="alert-placeholder">System ready. Monitoring for risks and opportunities...</li>
                 </ul>
             </div>
         </section>
@@ -131,10 +91,10 @@
         <!-- Quick Actions -->
         <section class="actions-section">
             <div class="actions-grid">
-                <button class="action-button" id="recordEntryBtn">Record Entry</button>
-                <button class="action-button" id="recordExitBtn">Record Exit</button>
-                <button class="action-button" id="exportDataBtn">Export Data</button>
-                <button class="action-button" id="viewStrategyBtn">View Strategy</button>
+                <button class="action-button" id="addPositionBtn">➕ Add Position</button>
+                <button class="action-button" id="sellPositionBtn">💰 Sell Position</button>
+                <button class="action-button" id="exportDataBtn">📊 Export Data</button>
+                <button class="action-button" id="viewStrategyBtn">📋 View Strategy</button>
             </div>
         </section>
     </main>
@@ -142,9 +102,9 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-container">
-            <p class="copyright">© 2026 ThinkingZaka</p>
-            <p class="disclaimer">For educational purposes only</p>
-            <a href="#" class="install-link" id="installPWA" style="display: none;">Install App</a>
+            <p class="copyright">© 2026 ThinkingZaka · Intelligent Portfolio Management</p>
+            <p class="disclaimer">For educational purposes only · Not financial advice</p>
+            <a href="#" class="install-link" id="installPWA" style="display: none;">📱 Install App</a>
         </div>
     </footer>
 
@@ -152,32 +112,32 @@
     <div class="modal" id="strategyModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Strategy Framework</h2>
+                <h2>Portfolio Management Strategy</h2>
                 <button class="modal-close" id="closeStrategyModal">&times;</button>
             </div>
             <div class="modal-body">
-                <h3>War Portfolio</h3>
+                <h3>Risk Management</h3>
                 <ul>
-                    <li><strong>BTC:</strong> $63,000 - $65,000 entry → $73,000 target</li>
-                    <li><strong>PLTR:</strong> $142 - $148 entry → $186 target</li>
-                    <li><strong>Gold:</strong> $4,805 - $5,000 entry → $6,000 target</li>
+                    <li><strong>Stop Loss:</strong> Automatic alerts at configured levels (5-15%)</li>
+                    <li><strong>RSI Monitoring:</strong> Overbought (>70) and Oversold (<30) alerts</li>
+                    <li><strong>Volatility Tracking:</strong> High volatility warnings (>5% daily)</li>
+                    <li><strong>Sharp Moves:</strong> Alerts on sudden drops/gains (>5%)</li>
                 </ul>
                 
-                <h3>Peace Portfolio</h3>
+                <h3>Opportunity Detection</h3>
                 <ul>
-                    <li><strong>QQQ:</strong> $595 - $603 entry → $616 target</li>
-                    <li><strong>SOL:</strong> $78 - $81 entry → $101 target</li>
-                    <li><strong>Capitec:</strong> R4,155 - R4,170 entry → R4,779 target</li>
-                    <li><strong>Standard Bank:</strong> R290 - R303 entry → R350 target</li>
-                    <li><strong>FirstRand:</strong> R86 - R87 entry → R102 target</li>
-                    <li><strong>Shoprite:</strong> R260 - R261 entry → R285 target</li>
+                    <li><strong>Take Profit:</strong> Alerts when hitting profit targets</li>
+                    <li><strong>Trend Strength:</strong> Assets trading above/below key averages</li>
+                    <li><strong>RSI Reversals:</strong> Potential trend changes from oversold/overbought</li>
+                    <li><strong>News Sentiment:</strong> Positive/negative news impact analysis</li>
                 </ul>
                 
-                <h3>Entry Rules</h3>
-                <p>Buy pullbacks in zones, not breakouts. RSI below 65 confirms entry.</p>
+                <h3>Current Holdings</h3>
+                <ul id="strategyHoldingsList">
+                    <!-- Populated by JS -->
+                </ul>
                 
-                <h3>Allocation</h3>
-                <p>War: 40% · Peace: 40% · Cash: 20%</p>
+                <p class="modal-note">Alerts are throttled (max 1 per hour per type) to prevent notification fatigue.</p>
             </div>
         </div>
     </div>
