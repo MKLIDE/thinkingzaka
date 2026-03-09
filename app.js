@@ -1,359 +1,407 @@
 // ===========================
-// ThinkingZaka v1.1 - Live Dashboard
+// ThinkingZaka v2.0 - Free Tier Optimized
+// RESPECTS 25 calls/day limit
 // ===========================
 
-const ALPHA_API_KEY = "75IQNS7TVU6Z7WR6"; // Consider moving to env variable
+const ALPHA_API_KEY = "75IQNS7TVU6Z7WR6";
 
+// Track API usage
+let alphaCallsToday = 0;
+let lastResetDate = new Date().toDateString();
+
+// Asset configuration with priorities
 const assets = {
-  btc: "bitcoin",
-  sol: "solana",
-  pltr: "PLTR",
-  qqq: "QQQ",
-  gold: "XAUUSD"
+  // High priority - check every cycle
+  btc: { 
+    id: "bitcoin", 
+    name: "BTC", 
+    category: "war",
+    priority: 1,
+    source: "coingecko", // Free, unlimited
+    updateInterval: 1 // Every cycle
+  },
+  sol: { 
+    id: "solana", 
+    name: "SOL", 
+    category: "peace",
+    priority: 1,
+    source: "coingecko",
+    updateInterval: 1
+  },
+  pltr: { 
+    id: "PLTR", 
+    name: "PLTR", 
+    category: "war",
+    priority: 1,
+    source: "alphavantage",
+    updateInterval: 3 // Every 3 cycles
+  },
+  qqq: { 
+    id: "QQQ", 
+    name: "QQQ", 
+    category: "peace",
+    priority: 1,
+    source: "alphavantage",
+    updateInterval: 3
+  },
+  gold: { 
+    id: "XAUUSD", 
+    name: "GOLD", 
+    category: "war",
+    priority: 1,
+    source: "alphavantage", 
+    updateInterval: 3
+  },
+  // South African stocks - lower priority, update rarely
+  capitec: { 
+    id: "CPI.JO", 
+    name: "CAPITEC", 
+    category: "peace",
+    priority: 2,
+    source: "alphavantage",
+    updateInterval: 6, // Every 6 cycles (hourly)
+    fallbackPrice: 4210 // Last known price as fallback
+  },
+  standardbank: { 
+    id: "SBK.JO", 
+    name: "STANDBANK", 
+    category: "peace",
+    priority: 2,
+    source: "alphavantage",
+    updateInterval: 6,
+    fallbackPrice: 296
+  },
+  firstrand: { 
+    id: "FSR.JO", 
+    name: "FIRSTRAND", 
+    category: "peace",
+    priority: 2,
+    source: "alphavantage",
+    updateInterval: 6,
+    fallbackPrice: 86
+  },
+  shoprite: { 
+    id: "SHP.JO", 
+    name: "SHOPRITE", 
+    category: "peace",
+    priority: 2,
+    source: "alphavantage",
+    updateInterval: 6,
+    fallbackPrice: 260
+  }
 };
 
-const entryZones = {
-  btc: [63000, 65000],
-  sol: [78, 81],
-  pltr: [142, 148],
-  qqq: [595, 603],
-  gold: [4805, 5000]
-};
-
-// Cache to reduce API calls and track state
+// Cache with expiration
 const cache = {
   prices: {},
   lastFetch: {},
-  errors: {}
+  cycleCount: 0
 };
 
-const CONFIG = {
-  CACHE_DURATION: 20000, // 20 seconds cache
-  RETRY_DELAY: 5000, // 5 seconds retry
-  MAX_RETRIES: 2
+// Entry zones with targets (from your strategy)
+const zones = {
+  btc: { entry: [63000, 65000], support: 60000, target: 73000 },
+  sol: { entry: [78, 81], support: 76, target: 101 },
+  pltr: { entry: [142, 148], support: 136, target: 186 },
+  qqq: { entry: [595, 603], support: 585, target: 616 },
+  gold: { entry: [4805, 5000], support: 4780, target: 6000 },
+  capitec: { entry: [4155, 4170], support: 4170, target: 4779 },
+  standardbank: { entry: [290, 303], support: 285, target: 350 },
+  firstrand: { entry: [86, 87], support: 84, target: 102 },
+  shoprite: { entry: [260, 261], support: 255, target: 285 }
 };
 
-// Utility for fetching JSON with retry logic and timeout
-async function fetchJSON(url, retries = CONFIG.MAX_RETRIES) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+// Track Alpha Vantage usage
+function checkAlphaLimit() {
+  const today = new Date().toDateString();
+  if (today !== lastResetDate) {
+    alphaCallsToday = 0;
+    lastResetDate = today;
+  }
+  
+  if (alphaCallsToday >= 20) { // Conservative limit (leave buffer)
+    console.warn("⚠️ Approaching Alpha Vantage daily limit");
+    return false;
+  }
+  return true;
+}
+
+// Modified fetch with limit awareness
+async function fetchWithLimit(url, assetId) {
+  if (!checkAlphaLimit()) {
+    // Return cached or fallback price
+    return cache.prices[assetId] !== undefined ? 
+      { fromCache: true, price: cache.prices[assetId] } : 
+      { fromCache: true, price: assets[assetId]?.fallbackPrice || 0 };
+  }
   
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
+    const res = await fetch(url);
+    alphaCallsToday++;
+    const data = await res.json();
+    return { fromCache: false, data };
   } catch (error) {
-    clearTimeout(timeoutId);
-    if (retries > 0 && error.name !== 'AbortError') {
-      await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY));
-      return fetchJSON(url, retries - 1);
-    }
-    throw error;
+    console.error(`Fetch failed for ${assetId}:`, error);
+    return { fromCache: true, price: cache.prices[assetId] || assets[assetId]?.fallbackPrice || 0 };
   }
 }
 
-// Check if cache is valid
-function isCacheValid(assetId) {
-  return cache.lastFetch[assetId] && 
-         (Date.now() - cache.lastFetch[assetId] < CONFIG.CACHE_DURATION) &&
-         cache.prices[assetId] !== undefined;
-}
-
-// ---------------- Crypto via CoinGecko
-async function getCryptoPrice(id) {
-  if (isCacheValid(id)) return cache.prices[id];
-  
-  try {
-    const data = await fetchJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
-    const price = data[id]?.usd || 0;
-    
-    if (price === 0) throw new Error(`Invalid price for ${id}`);
-    
-    cache.prices[id] = price;
-    cache.lastFetch[id] = Date.now();
-    delete cache.errors[id];
-    
-    return price;
-  } catch (error) {
-    cache.errors[id] = error.message;
-    console.error(`Error fetching ${id}:`, error);
-    return cache.prices[id] || 0; // Return last known price
-  }
-}
-
-// ---------------- Stocks/Gold via Alpha Vantage
-async function getStockPrice(symbol) {
-  if (isCacheValid(symbol)) return cache.prices[symbol];
-  
-  try {
-    const func = symbol === "XAUUSD" ? "CURRENCY_EXCHANGE_RATE" : "GLOBAL_QUOTE";
-    const url = func === "GLOBAL_QUOTE"
-      ? `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${ALPHA_API_KEY}`
-      : `https://www.alphavantage.co/query?function=${func}&from_currency=XAU&to_currency=USD&apikey=${ALPHA_API_KEY}`;
-    
-    const data = await fetchJSON(url);
-    
-    let price = 0;
-    if (func === "GLOBAL_QUOTE") {
-      // Check if we got a valid response
-      if (!data["Global Quote"] || !data["Global Quote"]["05. price"]) {
-        throw new Error(`Invalid Alpha Vantage response for ${symbol}`);
-      }
-      price = parseFloat(data["Global Quote"]["05. price"]);
-    } else {
-      if (!data["Realtime Currency Exchange Rate"] || !data["Realtime Currency Exchange Rate"]["5. Exchange Rate"]) {
-        throw new Error(`Invalid Alpha Vantage response for gold`);
-      }
-      price = parseFloat(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"]);
-    }
-    
-    if (isNaN(price) || price === 0) throw new Error(`Invalid price for ${symbol}`);
-    
-    cache.prices[symbol] = price;
-    cache.lastFetch[symbol] = Date.now();
-    delete cache.errors[symbol];
-    
-    return price;
-  } catch (error) {
-    cache.errors[symbol] = error.message;
-    console.error(`Error fetching ${symbol}:`, error);
-    return cache.prices[symbol] || 0;
-  }
-}
-
-// ---------------- Update Cards & Alerts
-function updateCard(id, name, price) {
-  const card = document.getElementById(id);
-  if (!card) return;
-  
-  // Handle stale/error state
-  if (price === 0 && cache.errors[id]) {
-    card.innerHTML = `<h3>${name}</h3>
-      <div class="price error">⚠️ Offline</div>
-      <small>Last: $${(cache.prices[id] || 0).toLocaleString()}</small><br>
-      <small class="timestamp">${new Date().toLocaleTimeString()}</small>`;
-    return;
-  }
-  
-  const arrow = cache.prices[id] ? (price > cache.prices[id] ? "↑" : (price < cache.prices[id] ? "↓" : "→")) : "";
-  const priceChangeClass = price > cache.prices[id] ? "up" : (price < cache.prices[id] ? "down" : "stable");
-  
-  cache.prices[id] = price;
-  
-  card.innerHTML = `<h3>${name}</h3>
-    <div class="price ${priceChangeClass}">$${price.toLocaleString()} ${arrow}</div>
-    <small class="timestamp">${new Date().toLocaleTimeString()}</small>`;
-}
-
-// Check entry zones with debounce to avoid spam
-const alertThrottle = {};
-
-function checkEntryZone(id, price) {
-  const zone = entryZones[id];
-  if (!zone || price === 0) return;
-  
-  const inZone = price >= zone[0] && price <= zone[1];
-  const lastAlert = alertThrottle[id] || 0;
+// Price fetching with priority-based scheduling
+async function getPrice(assetId, asset) {
   const now = Date.now();
+  const cycle = cache.cycleCount;
   
-  if (inZone && (now - lastAlert > 60000)) { // Max once per minute
-    alertThrottle[id] = now;
-    createAlert(`🚨 ${id.toUpperCase()} entered ENTRY ZONE: ${zone[0]}–${zone[1]} (Current: $${price})`);
-    notifyUser(`${id.toUpperCase()} ALERT`, `Price at $${price}`);
-  } else if (!inZone && lastAlert > 0 && (now - lastAlert > 300000)) {
-    // Clear throttle if out of zone for 5 minutes
-    alertThrottle[id] = 0;
+  // Check if this asset should update this cycle based on priority
+  if (cycle % asset.updateInterval !== 0) {
+    // Return cached price
+    return cache.prices[assetId] || asset.fallbackPrice || 0;
   }
-}
-
-// ---------------- Alerts with max limit
-function createAlert(text) {
-  const list = document.getElementById("alertList");
-  if (!list) return;
   
-  const li = document.createElement("li");
-  li.textContent = text;
-  li.classList.add('alert-item');
-  list.prepend(li);
-  
-  // Keep only last 10 alerts
-  while (list.children.length > 10) {
-    list.removeChild(list.lastChild);
+  // Check cache age (don't update if recent)
+  if (cache.lastFetch[assetId] && now - cache.lastFetch[assetId] < 300000) { // 5 min cache
+    return cache.prices[assetId];
   }
-}
-
-// ---------------- Notifications
-let notificationPermission = false;
-
-async function initNotifications() {
-  if (!("Notification" in window)) return false;
-  
-  if (Notification.permission === "granted") {
-    notificationPermission = true;
-  } else if (Notification.permission !== "denied") {
-    const permission = await Notification.requestPermission();
-    notificationPermission = permission === "granted";
-  }
-  return notificationPermission;
-}
-
-function notifyUser(title, text) {
-  if (!notificationPermission) return;
-  new Notification(title, { body: text, silent: false });
-}
-
-// ---------------- Macro Regime with better logic
-function updateMacro() {
-  const btcPrice = cache.prices.btc || 0;
-  const pltrPrice = cache.prices.pltr || 0;
-  
-  // More nuanced scoring
-  let score = 0;
-  score += btcPrice > 65000 ? -2 : (btcPrice > 60000 ? -1 : 1);
-  score += pltrPrice > 150 ? -2 : (pltrPrice > 100 ? -1 : 1);
-  
-  const status = score > 0 ? "🛡️ WAR BIAS" : (score < 0 ? "☮️ PEACE BIAS" : "⚖️ NEUTRAL");
-  document.getElementById("macroStatus").innerText = status;
-}
-
-// ---------------- Main Update with rate limiting
-let isUpdating = false;
-let updateInterval;
-
-async function updateMarket() {
-  if (isUpdating) return; // Prevent concurrent updates
-  isUpdating = true;
   
   try {
-    // Show loading state
-    document.querySelectorAll('.price').forEach(el => {
-      if (!el.classList.contains('error')) {
-        el.classList.add('loading');
+    let price = 0;
+    
+    if (asset.source === "coingecko") {
+      // CoinGecko - free, good limits
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${asset.id}&vs_currencies=usd`);
+      const data = await res.json();
+      price = data[asset.id]?.usd || 0;
+    } else {
+      // Alpha Vantage - limited calls
+      const func = asset.id === "XAUUSD" ? "CURRENCY_EXCHANGE_RATE" : "GLOBAL_QUOTE";
+      const url = func === "GLOBAL_QUOTE"
+        ? `https://www.alphavantage.co/query?function=${func}&symbol=${asset.id}&apikey=${ALPHA_API_KEY}`
+        : `https://www.alphavantage.co/query?function=${func}&from_currency=XAU&to_currency=USD&apikey=${ALPHA_API_KEY}`;
+      
+      const result = await fetchWithLimit(url, assetId);
+      
+      if (result.fromCache) {
+        return result.price;
       }
-    });
+      
+      if (func === "GLOBAL_QUOTE") {
+        price = parseFloat(result.data["Global Quote"]?.["05. price"] || 0);
+      } else {
+        price = parseFloat(result.data["Realtime Currency Exchange Rate"]?.["5. Exchange Rate"] || 0);
+      }
+    }
     
-    // Parallel fetching for better performance
-    const [btcPrice, solPrice, pltrPrice, qqqPrice, goldPrice] = await Promise.allSettled([
-      getCryptoPrice("bitcoin"),
-      getCryptoPrice("solana"),
-      getStockPrice("PLTR"),
-      getStockPrice("QQQ"),
-      getStockPrice("XAUUSD")
-    ]);
+    if (price > 0) {
+      cache.prices[assetId] = price;
+      cache.lastFetch[assetId] = now;
+    }
     
-    // Update each card with results (handle both fulfilled and rejected)
-    updateCard("btc", "BTC", btcPrice.status === 'fulfilled' ? btcPrice.value : 0);
-    checkEntryZone("btc", btcPrice.status === 'fulfilled' ? btcPrice.value : 0);
-    
-    updateCard("sol", "SOL", solPrice.status === 'fulfilled' ? solPrice.value : 0);
-    checkEntryZone("sol", solPrice.status === 'fulfilled' ? solPrice.value : 0);
-    
-    updateCard("pltr", "PLTR", pltrPrice.status === 'fulfilled' ? pltrPrice.value : 0);
-    checkEntryZone("pltr", pltrPrice.status === 'fulfilled' ? pltrPrice.value : 0);
-    
-    updateCard("qqq", "QQQ", qqqPrice.status === 'fulfilled' ? qqqPrice.value : 0);
-    checkEntryZone("qqq", qqqPrice.status === 'fulfilled' ? qqqPrice.value : 0);
-    
-    updateCard("gold", "GOLD", goldPrice.status === 'fulfilled' ? goldPrice.value : 0);
-    checkEntryZone("gold", goldPrice.status === 'fulfilled' ? goldPrice.value : 0);
-    
-    updateMacro();
-    
-    // Show last successful update time
-    document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
-    
+    return price || cache.prices[assetId] || asset.fallbackPrice || 0;
   } catch (error) {
-    console.error('Update failed:', error);
-    createAlert(`⚠️ Update failed: ${error.message}`);
-  } finally {
-    isUpdating = false;
-    
-    // Remove loading class
-    document.querySelectorAll('.price').forEach(el => {
-      el.classList.remove('loading');
-    });
+    console.error(`Error fetching ${assetId}:`, error);
+    return cache.prices[assetId] || asset.fallbackPrice || 0;
   }
 }
 
-// ---------------- Manual refresh button
-function manualRefresh() {
-  createAlert('🔄 Manual refresh triggered');
-  updateMarket();
+// RSI simulation using price position (saves API calls)
+function calculateSimulatedRSI(assetId, currentPrice) {
+  const zone = zones[assetId];
+  if (!zone) return 50;
+  
+  // Calculate where price is in its recent range
+  const range = zone.target - zone.support;
+  if (range <= 0) return 50;
+  
+  const position = (currentPrice - zone.support) / range;
+  // Convert to 0-100 scale, with 50 as neutral
+  const simulatedRSI = Math.min(100, Math.max(0, position * 100));
+  
+  return Math.round(simulatedRSI);
 }
 
-// ---------------- Status indicator
-function updateConnectionStatus() {
-  const errors = Object.keys(cache.errors).length;
-  const statusEl = document.getElementById('connectionStatus');
-  if (!statusEl) return;
+// Entry analysis using your strategy rules
+function analyzeEntry(assetId, price) {
+  const zone = zones[assetId];
+  if (!zone) return null;
   
-  if (errors > 0) {
-    statusEl.innerHTML = `⚠️ ${errors} source(s) offline`;
-    statusEl.className = 'status-warning';
-  } else {
-    statusEl.innerHTML = '✅ All sources online';
-    statusEl.className = 'status-ok';
+  const inZone = price >= zone.entry[0] && price <= zone.entry[1];
+  const nearSupport = price <= zone.support * 1.02;
+  const rsi = calculateSimulatedRSI(assetId, price);
+  const distanceToTarget = ((zone.target - price) / price) * 100;
+  
+  // Your strategy: "Buy pullbacks, not breakouts"
+  const isBreakout = price > zone.entry[1];
+  const isPullback = price < zone.entry[0] && price > zone.support;
+  
+  // Entry logic based on your strategy document
+  let shouldEnter = false;
+  let reason = "";
+  let confidence = "LOW";
+  
+  if (inZone && rsi < 65) {
+    shouldEnter = true;
+    reason = `In entry zone with RSI ${rsi} - healthy pullback`;
+    confidence = "HIGH";
+  } else if (nearSupport && rsi < 50) {
+    shouldEnter = true;
+    reason = `Near support with RSI ${rsi} - accumulation zone`;
+    confidence = "MEDIUM";
+  } else if (isPullback && rsi < 40) {
+    shouldEnter = true;
+    reason = `Deep pullback, RSI ${rsi} - oversold`;
+    confidence = "HIGH";
   }
+  
+  return {
+    inZone,
+    nearSupport,
+    isBreakout,
+    isPullback,
+    rsi,
+    distanceToTarget: distanceToTarget.toFixed(1) + "%",
+    shouldEnter,
+    reason,
+    confidence
+  };
 }
 
-// ---------------- Initialize
-async function init() {
-  // Request notification permission on load
-  await initNotifications();
+// Macro regime detection from your strategy
+function detectMacroRegime() {
+  let warScore = 0;
+  let peaceScore = 0;
   
-  // Add connection status indicator if not exists
-  if (!document.getElementById('connectionStatus')) {
-    const header = document.querySelector('h1') || document.body;
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'connectionStatus';
-    statusDiv.className = 'status-ok';
-    header.insertAdjacentElement('afterend', statusDiv);
+  const btc = cache.prices.btc || 0;
+  const pltr = cache.prices.pltr || 0;
+  const qqq = cache.prices.qqq || 0;
+  const gold = cache.prices.gold || 0;
+  
+  // War signals from your document
+  if (gold > zones.gold.support * 1.02) warScore += 1; // Rising gold = safe haven
+  if (btc < zones.btc.support) warScore += 1; // BTC down = fear
+  if (pltr > zones.pltr.target) warScore += 1; // Defense spending up
+  
+  // Peace signals from your document
+  if (qqq > zones.qqq.support * 1.05) peaceScore += 1; // Tech up = risk on
+  if (btc > zones.btc.entry[0]) peaceScore += 1; // BTC stable/up
+  if (pltr < zones.pltr.entry[1]) peaceScore += 1; // PLTR pullback = not spiking
+  
+  if (warScore > peaceScore + 1) return "⚔️ WAR BIAS - Favor defense assets";
+  if (peaceScore > warScore + 1) return "🕊️ PEACE BIAS - Favor growth assets";
+  return "⚖️ NEUTRAL - Balanced allocation (40/40/20)";
+}
+
+// Update UI with full strategy info
+function updateCard(assetId, price) {
+  const asset = assets[assetId];
+  const card = document.getElementById(assetId);
+  if (!card || !asset) return;
+  
+  const analysis = analyzeEntry(assetId, price);
+  const arrow = cache.prices[assetId] ? 
+    (price > cache.prices[assetId] ? "↑" : price < cache.prices[assetId] ? "↓" : "→") : "";
+  
+  cache.prices[assetId] = price;
+  
+  // Build strategy-aware HTML
+  let strategyHtml = "";
+  if (analysis) {
+    strategyHtml = `
+      <div class="strategy-panel">
+        <div class="zone-info">
+          <small>Entry: $${zones[assetId].entry[0].toLocaleString()}-${zones[assetId].entry[1].toLocaleString()}</small>
+          <small>Support: $${zones[assetId].support.toLocaleString()}</small>
+          <small>Target: $${zones[assetId].target.toLocaleString()} (${analysis.distanceToTarget})</small>
+        </div>
+        <div class="tech-info">
+          <span class="rsi">RSI: ${analysis.rsi}</span>
+          ${analysis.isBreakout ? '<span class="warning">⚠️ Breakout - wait for pullback</span>' : ''}
+          ${analysis.isPullback ? '<span class="signal">📉 Pullback - watching</span>' : ''}
+        </div>
+        ${analysis.shouldEnter ? 
+          `<div class="buy-signal ${analysis.confidence.toLowerCase()}">
+            🎯 BUY SIGNAL (${analysis.confidence} confidence)<br>
+            <small>${analysis.reason}</small>
+           </div>` : 
+          ''}
+      </div>
+    `;
   }
   
-  // Add last update time if not exists
-  if (!document.getElementById('lastUpdateTime')) {
-    const macroEl = document.getElementById('macroStatus');
-    if (macroEl) {
-      const timeEl = document.createElement('small');
-      timeEl.id = 'lastUpdateTime';
-      timeEl.style.marginLeft = '10px';
-      macroEl.insertAdjacentElement('afterend', timeEl);
+  card.innerHTML = `
+    <h3>${asset.name} <span class="category ${asset.category}">${asset.category}</span></h3>
+    <div class="price">$${price.toLocaleString()} ${arrow}</div>
+    ${strategyHtml}
+    <div class="metadata">
+      <small>Source: ${asset.source}</small>
+      <small>${new Date().toLocaleTimeString()}</small>
+    </div>
+  `;
+}
+
+// Main update loop with cycle counting
+async function updateMarket() {
+  cache.cycleCount++;
+  
+  // Show API usage
+  const usageEl = document.getElementById("apiUsage");
+  if (usageEl) {
+    usageEl.textContent = `Alpha Vantage: ${alphaCallsToday}/20 today`;
+  }
+  
+  // Update each asset based on priority schedule
+  for (const [id, asset] of Object.entries(assets)) {
+    const price = await getPrice(id, asset);
+    if (price > 0) {
+      updateCard(id, price);
+      
+      // Generate alert if buy signal
+      const analysis = analyzeEntry(id, price);
+      if (analysis?.shouldEnter) {
+        createAlert(`🎯 ${asset.name}: ${analysis.reason} ($${price})`);
+      }
     }
   }
+  
+  // Update macro regime
+  const macroEl = document.getElementById("macroStatus");
+  if (macroEl) {
+    macroEl.textContent = detectMacroRegime();
+  }
+}
+
+// Initialize with your existing HTML structure
+document.addEventListener('DOMContentLoaded', () => {
+  // Add API usage indicator
+  const header = document.querySelector('h1') || document.body;
+  const usageDiv = document.createElement('div');
+  usageDiv.id = 'apiUsage';
+  usageDiv.style.fontSize = '12px';
+  usageDiv.style.color = '#888';
+  header.insertAdjacentElement('afterend', usageDiv);
   
   // Start updates
   updateMarket();
-  updateInterval = setInterval(updateMarket, 30000);
-  
-  // Check connection status periodically
-  setInterval(updateConnectionStatus, 5000);
-  
-  // Cleanup on page unload
-  window.addEventListener('beforeunload', () => {
-    if (updateInterval) clearInterval(updateInterval);
-  });
-}
+  setInterval(updateMarket, 600000); // 10 minutes to save API calls
+});
 
-// Add some CSS classes dynamically
+// Styling for strategy UI
 const style = document.createElement('style');
 style.textContent = `
-  .price.up { color: #00ff00; }
-  .price.down { color: #ff0000; }
-  .price.stable { color: #ffff00; }
-  .price.loading { opacity: 0.5; }
-  .price.error { color: #ff6666; }
-  .status-ok { color: #00ff00; }
-  .status-warning { color: #ffff00; }
-  .timestamp { font-size: 0.8em; color: #888; }
-  .alert-item { animation: fadeIn 0.3s; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .category { font-size: 10px; padding: 2px 5px; border-radius: 3px; }
+  .category.war { background: #ff4444; color: white; }
+  .category.peace { background: #44ff44; color: black; }
+  .strategy-panel { font-size: 12px; margin: 8px 0; padding: 5px; background: #f5f5f5; border-radius: 3px; }
+  .zone-info { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .tech-info { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .rsi { font-weight: bold; }
+  .warning { color: orange; }
+  .signal { color: blue; }
+  .buy-signal { 
+    background: #00ff00; color: black; padding: 5px; border-radius: 3px; 
+    font-weight: bold; text-align: center; margin-top: 5px;
+  }
+  .buy-signal.high { background: #00ff00; }
+  .buy-signal.medium { background: #ffff00; }
+  .buy-signal.low { background: #ffaa00; }
+  .metadata { display: flex; justify-content: space-between; margin-top: 5px; color: #888; }
 `;
 document.head.appendChild(style);
-
-// Start the dashboard
-init();
-
-// Expose manual refresh to console/window
-window.refreshDashboard = manualRefresh;
